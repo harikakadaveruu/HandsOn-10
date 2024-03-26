@@ -1,197 +1,107 @@
-#include <iostream>
-#include <cstdlib> 
+#include <stdio.h>
+#include <stdlib.h>
 #include <cmath>
-
 struct Node {
     int key;
     int data;
-    Node* next;
-    Node* prev;
-    
-    Node(int k, int d) : key(k), data(d), next(nullptr), prev(nullptr) {}
+    struct Node* next;
+    struct Node* prev;
 };
-
-class HashTable {
-private:
-    Node** table;
+struct HashTable {
+    struct Node** table;
     int capacity;
     int size;
-    const int INITIAL_CAPACITY = 10;
-    const double LOAD_FACTOR_THRESHOLD = 0.75;
-    const double SHRINK_THRESHOLD = 0.25;
-    
-
-    int hash(int key) {
-        double A = 0.6180339887;
-        return static_cast<int>(capacity * std::fmod((key * A), 1));
-    }
-    
-    
-    Node* createNode(int key, int data) {
-        return new Node(key, data);
-    }
-
-    void destroyNode(Node* node) {
-        delete node;
-    }
-
-    void resize() {
-        int newCapacity = capacity * 2;
-        Node** newTable = new Node*[newCapacity];
-        for (int i = 0; i < newCapacity; ++i) {
-            newTable[i] = nullptr;
-        }
-    
-        for (int i = 0; i < capacity; ++i) {
-            Node* current = table[i];
-            while (current) {
-                Node* temp = current->next;
-                int index = hash(current->key);
-                current->next = newTable[index];
-                if (newTable[index]) {
-                    newTable[index]->prev = current;
-                }
-                newTable[index] = current;
-                current->prev = nullptr;
-                current = temp;
-            }
-        }
-        
-        delete[] table;
-        table = newTable;
-        capacity = newCapacity;
-    }
-    
-    void checkResize() {
-        if (static_cast<double>(size) / capacity >= LOAD_FACTOR_THRESHOLD) {
-            resize();
-        } else if (capacity > INITIAL_CAPACITY && static_cast<double>(size) / capacity <= SHRINK_THRESHOLD) {
-            resizeDown();
-        }
-    }
-    
-    void resizeDown() {
-        int newCapacity = capacity / 2;
-        Node** newTable = new Node*[newCapacity];
-        for (int i = 0; i < newCapacity; ++i) {
-            newTable[i] = nullptr;
-        }
-        
-        for (int i = 0; i < capacity; ++i) {
-            Node* current = table[i];
-            while (current) {
-                Node* temp = current->next;
-                int index = hash(current->key);
-                current->next = newTable[index];
-                if (newTable[index]) {
-                    newTable[index]->prev = current;
-                }
-                newTable[index] = current;
-                current->prev = nullptr;
-                current = temp;
-            }
-        }
-        
-        delete[] table;
-        table = newTable;
-        capacity = newCapacity;
-    }
-
-public:
-    // Constructor
-    HashTable() : capacity(INITIAL_CAPACITY), size(0) {
-        table = new Node*[capacity];
-        for (int i = 0; i < capacity; ++i) {
-            table[i] = nullptr;
-        }
-    }
-
-    ~HashTable() {
-        for (int i = 0; i < capacity; ++i) {
-            Node* current = table[i];
-            while (current) {
-                Node* temp = current;
-                current = current->next;
-                destroyNode(temp);
-            }
-        }
-        delete[] table;
-    }
-
-    void insert(int key, int data) {
-        checkResize();
-        int index = hash(key);
-        Node* newNode = createNode(key, data);
-        newNode->next = table[index];
-        if (table[index]) {
-            table[index]->prev = newNode;
-        }
-        table[index] = newNode;
-        ++size;
-    }
-    
-    void remove(int key) {
-        int index = hash(key);
-        Node* current = table[index];
-        while (current) {
-            if (current->key == key) {
-                if (current->prev) {
-                    current->prev->next = current->next;
-                } else {
-                    table[index] = current->next;
-                }
-                if (current->next) {
-                    current->next->prev = current->prev;
-                }
-                destroyNode(current);
-                --size;
-                return;
-            }
-            current = current->next;
-        }
-    }
-    
-    int get(int key) {
-        int index = hash(key);
-        Node* current = table[index];
-        while (current) {
-            if (current->key == key) {
-                return current->data;
-            }
-            current = current->next;
-        }
-        return -1; 
-    }
-    
-    void print() {
-        for (int i = 0; i < capacity; ++i) {
-            std::cout << "[" << i << "]: ";
-            Node* current = table[i];
-            while (current) {
-                std::cout << "(" << current->key << ", " << current->data << ") ";
-                current = current->next;
-            }
-            std::cout << std::endl;
-        }
-    }
 };
-
+struct Node* createNode(int key,int data) {
+    struct Node* newNode=(struct Node*)malloc(sizeof(struct Node));
+    newNode->key=key;
+    newNode->data=data;
+    newNode->next=NULL;
+    newNode->prev=NULL;
+    return newNode;
+}
+void destroyNode(struct Node* node) {
+    free(node);
+}
+void initializeHashTable(struct HashTable* ht,int initialCapacity) {
+    ht->capacity=initialCapacity;
+    ht->size=0;
+    ht->table=(struct Node**)malloc(ht->capacity * sizeof(struct Node*));
+    for (int i=0;i < ht->capacity;++i) {
+        ht->table[i]=NULL;
+    }
+}
+int hash(int key,int capacity) {
+    double A=0.6180339887;
+    return (int)(capacity * fmod((key * A),1));
+}
+void insert(struct HashTable* ht,int key,int data) {
+    if ((double)ht->size / ht->capacity >= 0.75) {
+    }
+    int index=hash(key,ht->capacity);
+    struct Node* newNode=createNode(key,data);
+    newNode->next=ht->table[index];
+    if (ht->table[index]) {
+        ht->table[index]->prev=newNode;
+    }
+    ht->table[index]=newNode;
+    ++(ht->size);
+}
+int get(struct HashTable* ht, int key) {
+    int index=hash(key,ht->capacity);
+    struct Node* current=ht->table[index];
+    while (current) {
+        if (current->key == key) {
+            return current->data;
+        }
+        current=current->next;
+    }
+    return -1; 
+}
+void removeKey(struct HashTable* ht,int key) {
+    int index=hash(key,ht->capacity);
+    struct Node* current=ht->table[index];
+    while (current) {
+        if (current->key == key) {
+            if (current->prev) {
+                current->prev->next=current->next;
+            } else {
+                ht->table[index]=current->next;
+            }
+            if (current->next) {
+                current->next->prev=current->prev;
+            }
+            destroyNode(current);
+            --(ht->size);
+            return;
+        }
+        current=current->next;
+    }
+}
+void print(struct HashTable* ht) {
+    for (int i=0;i < ht->capacity;++i) {
+        printf("[%d]: ",i);
+        struct Node* current=ht->table[i];
+        while (current) {
+            printf("(%d, %d) ",current->key,current->data);
+            current=current->next;
+        }
+        printf("\n");
+    }
+}
 int main() {
-    HashTable hashTable;
-    hashTable.insert(5, 10);
-    hashTable.insert(15, 20);
-    hashTable.insert(25, 30);
-    hashTable.insert(35, 40);
-    hashTable.insert(45, 50);
-    
-    std::cout << "Hash Table:" << std::endl;
-    hashTable.print();
-    
-    std::cout << "Value for key 15: " << hashTable.get(15) << std::endl;
-    
-    hashTable.remove(25);
-    std::cout << "Hash Table after removing key 25:" << std::endl;
-    hashTable.print();
-    
+    struct HashTable ht;
+    initializeHashTable(&ht,10);
+    insert(&ht,5,40);
+    insert(&ht,15,27);
+    insert(&ht,25,30);
+    insert(&ht,35,60);
+    insert(&ht,45,55);
+    printf("Hash Table:\n");
+    print(&ht);
+    printf("Value for key 15: %d\n",get(&ht,15));
+    removeKey(&ht,35);
+    printf("Hash Table after removing key 35:\n");
+    print(&ht);
     return 0;
 }
