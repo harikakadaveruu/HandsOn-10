@@ -1,0 +1,197 @@
+#include <iostream>
+#include <cstdlib> 
+#include <cmath>
+
+struct Node {
+    int key;
+    int data;
+    Node* next;
+    Node* prev;
+    
+    Node(int k, int d) : key(k), data(d), next(nullptr), prev(nullptr) {}
+};
+
+class HashTable {
+private:
+    Node** table;
+    int capacity;
+    int size;
+    const int INITIAL_CAPACITY = 10;
+    const double LOAD_FACTOR_THRESHOLD = 0.75;
+    const double SHRINK_THRESHOLD = 0.25;
+    
+
+    int hash(int key) {
+        double A = 0.6180339887;
+        return static_cast<int>(capacity * std::fmod((key * A), 1));
+    }
+    
+    
+    Node* createNode(int key, int data) {
+        return new Node(key, data);
+    }
+
+    void destroyNode(Node* node) {
+        delete node;
+    }
+
+    void resize() {
+        int newCapacity = capacity * 2;
+        Node** newTable = new Node*[newCapacity];
+        for (int i = 0; i < newCapacity; ++i) {
+            newTable[i] = nullptr;
+        }
+    
+        for (int i = 0; i < capacity; ++i) {
+            Node* current = table[i];
+            while (current) {
+                Node* temp = current->next;
+                int index = hash(current->key);
+                current->next = newTable[index];
+                if (newTable[index]) {
+                    newTable[index]->prev = current;
+                }
+                newTable[index] = current;
+                current->prev = nullptr;
+                current = temp;
+            }
+        }
+        
+        delete[] table;
+        table = newTable;
+        capacity = newCapacity;
+    }
+    
+    void checkResize() {
+        if (static_cast<double>(size) / capacity >= LOAD_FACTOR_THRESHOLD) {
+            resize();
+        } else if (capacity > INITIAL_CAPACITY && static_cast<double>(size) / capacity <= SHRINK_THRESHOLD) {
+            resizeDown();
+        }
+    }
+    
+    void resizeDown() {
+        int newCapacity = capacity / 2;
+        Node** newTable = new Node*[newCapacity];
+        for (int i = 0; i < newCapacity; ++i) {
+            newTable[i] = nullptr;
+        }
+        
+        for (int i = 0; i < capacity; ++i) {
+            Node* current = table[i];
+            while (current) {
+                Node* temp = current->next;
+                int index = hash(current->key);
+                current->next = newTable[index];
+                if (newTable[index]) {
+                    newTable[index]->prev = current;
+                }
+                newTable[index] = current;
+                current->prev = nullptr;
+                current = temp;
+            }
+        }
+        
+        delete[] table;
+        table = newTable;
+        capacity = newCapacity;
+    }
+
+public:
+    // Constructor
+    HashTable() : capacity(INITIAL_CAPACITY), size(0) {
+        table = new Node*[capacity];
+        for (int i = 0; i < capacity; ++i) {
+            table[i] = nullptr;
+        }
+    }
+
+    ~HashTable() {
+        for (int i = 0; i < capacity; ++i) {
+            Node* current = table[i];
+            while (current) {
+                Node* temp = current;
+                current = current->next;
+                destroyNode(temp);
+            }
+        }
+        delete[] table;
+    }
+
+    void insert(int key, int data) {
+        checkResize();
+        int index = hash(key);
+        Node* newNode = createNode(key, data);
+        newNode->next = table[index];
+        if (table[index]) {
+            table[index]->prev = newNode;
+        }
+        table[index] = newNode;
+        ++size;
+    }
+    
+    void remove(int key) {
+        int index = hash(key);
+        Node* current = table[index];
+        while (current) {
+            if (current->key == key) {
+                if (current->prev) {
+                    current->prev->next = current->next;
+                } else {
+                    table[index] = current->next;
+                }
+                if (current->next) {
+                    current->next->prev = current->prev;
+                }
+                destroyNode(current);
+                --size;
+                return;
+            }
+            current = current->next;
+        }
+    }
+    
+    int get(int key) {
+        int index = hash(key);
+        Node* current = table[index];
+        while (current) {
+            if (current->key == key) {
+                return current->data;
+            }
+            current = current->next;
+        }
+        return -1; 
+    }
+    
+    void print() {
+        for (int i = 0; i < capacity; ++i) {
+            std::cout << "[" << i << "]: ";
+            Node* current = table[i];
+            while (current) {
+                std::cout << "(" << current->key << ", " << current->data << ") ";
+                current = current->next;
+            }
+            std::cout << std::endl;
+        }
+    }
+};
+
+int main() {
+    HashTable hashTable;
+    hashTable.insert(5, 10);
+    hashTable.insert(15, 20);
+    hashTable.insert(25, 30);
+    hashTable.insert(35, 40);
+    hashTable.insert(45, 50);
+    
+    std::cout << "Hash Table:" << std::endl;
+    hashTable.print();
+    
+    std::cout << "Value for key 15: " << hashTable.get(15) << std::endl;
+    
+    hashTable.remove(25);
+    std::cout << "Hash Table after removing key 25:" << std::endl;
+    hashTable.print();
+    
+    return 0;
+}
